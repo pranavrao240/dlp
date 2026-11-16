@@ -1,0 +1,99 @@
+﻿=== CELL 1 [MARKDOWN] ===
+# Practical 5: Continuous Bag of Words (CBOW)
+
+Run the cells from top to bottom in Jupyter Notebook. For Spyder, run the same steps in order.
+
+=== CELL 2 [CODE] ===
+# Step 1: Import libraries
+import numpy as np
+import matplotlib.pyplot as plt
+from tensorflow import keras
+from tensorflow.keras import layers
+from tensorflow.keras.preprocessing.text import Tokenizer
+
+
+=== CELL 3 [CODE] ===
+# Step 2: Load text (online, offline, or directly in code)
+# OPTION 1: Download from internet (commented)
+# import urllib.request
+# url = "https://storage.googleapis.com/download.tensorflow.org/data/shakespeare.txt"
+# urllib.request.urlretrieve(url, "cbow.txt")
+
+# OPTION 2: Offline text file in the same folder (active)
+with open("cbow.txt", "r", encoding="utf-8") as file:
+    text = file.read()
+
+# OPTION 3: Write text directly in code (comment out Option 2 to use)
+# text = """
+# Deep learning is fun and deep learning is useful.
+# Machine learning helps computers learn from data.
+# Deep learning models learn patterns from data.
+# Neural networks are used in deep learning.
+# Artificial intelligence uses machine learning.
+# Deep learning helps in image classification.
+# """
+
+# Keep a short input for quick practical training
+text = " ".join(text.split()[:500])
+
+
+=== CELL 4 [CODE] ===
+# Step 3: Tokenize text
+tokenizer = Tokenizer()
+tokenizer.fit_on_texts([text])
+sequence = tokenizer.texts_to_sequences([text])[0]
+vocab_size = len(tokenizer.word_index) + 1
+print("Vocabulary Size:", vocab_size)
+
+
+=== CELL 5 [CODE] ===
+# Step 4: Generate context-target pairs
+X, y = [], []
+for i in range(1, len(sequence) - 1):
+    X.append([sequence[i - 1], sequence[i + 1]])
+    y.append(sequence[i])
+X = np.array(X)
+y = np.array(y)
+print("Training Pairs:", len(X))
+
+
+=== CELL 6 [CODE] ===
+# Step 5: Build CBOW model
+model = keras.Sequential([
+    layers.Input(shape=(2,)),
+    layers.Embedding(vocab_size, 10),
+    layers.GlobalAveragePooling1D(),
+    layers.Dense(vocab_size, activation="softmax")
+])
+
+
+=== CELL 7 [CODE] ===
+# Step 6: Compile model
+model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
+
+
+=== CELL 8 [CODE] ===
+# Step 7: Train model
+history = model.fit(X, y, epochs=200, verbose=0)
+print("Training Completed")
+
+
+=== CELL 9 [CODE] ===
+# Step 8: Predict a target word from context
+prediction = model.predict(X[:1], verbose=0)
+predicted_index = np.argmax(prediction)
+index_word = tokenizer.index_word
+print("Context Words:", index_word[X[0][0]], index_word[X[0][1]])
+print("Actual Word:", index_word[y[0]])
+print("Predicted Word:", index_word.get(predicted_index, "Unknown"))
+
+
+=== CELL 10 [CODE] ===
+# Step 9: Plot training loss
+plt.plot(history.history["loss"])
+plt.title("CBOW Training Loss")
+plt.xlabel("Epochs")
+plt.ylabel("Loss")
+plt.show()
+
+

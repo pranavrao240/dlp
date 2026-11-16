@@ -1,0 +1,113 @@
+﻿=== CELL 1 [MARKDOWN] ===
+# Practical 4: Anomaly Detection using Autoencoder (ECG)
+
+Run the cells from top to bottom in Jupyter Notebook. For Spyder, run the same steps in order.
+
+=== CELL 2 [CODE] ===
+# Step 1: Import libraries
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from tensorflow import keras
+from tensorflow.keras import layers
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics import accuracy_score
+
+
+=== CELL 3 [CODE] ===
+# Step 2: Load ECG dataset (offline active, online commented)
+# OPTION 1: Download from internet
+# import urllib.request
+# url = "https://storage.googleapis.com/download.tensorflow.org/data/ecg.csv"
+# urllib.request.urlretrieve(url, "ecg.csv")
+
+# OPTION 2: Offline file in the same folder
+data = pd.read_csv("ecg.csv", header=None)
+print("Dataset Shape:", data.shape)
+
+
+=== CELL 4 [CODE] ===
+# Step 3: Separate features and labels (1 normal, 0 anomaly)
+x = data.iloc[:, :-1].values
+y = data.iloc[:, -1].values.astype(int)
+
+
+=== CELL 5 [CODE] ===
+# Step 4: Split into train/test sets
+x_train, x_test, y_train, y_test = train_test_split(
+    x, y, test_size=0.2, random_state=42, stratify=y
+)
+
+
+=== CELL 6 [CODE] ===
+# Step 5: Select normal ECG samples and scale
+x_train = x_train[y_train == 1]
+scaler = MinMaxScaler()
+x_train = scaler.fit_transform(x_train)
+x_test = np.clip(scaler.transform(x_test), 0, 1)
+
+
+=== CELL 7 [CODE] ===
+# Step 6: Build autoencoder
+model = keras.Sequential([
+    layers.Input(shape=(x_train.shape[1],)),
+    layers.Dense(32, activation="relu"),
+    layers.Dense(16, activation="relu"),
+    layers.Dense(8, activation="relu"),
+    layers.Dense(16, activation="relu"),
+    layers.Dense(32, activation="relu"),
+    layers.Dense(x_train.shape[1], activation="sigmoid")
+])
+
+
+=== CELL 8 [CODE] ===
+# Step 7: Compile model
+model.compile(optimizer="adam", loss="mse")
+
+
+=== CELL 9 [CODE] ===
+# Step 8: Train on normal ECG signals
+history = model.fit(x_train, x_train, epochs=20, batch_size=512, validation_split=0.1)
+
+
+=== CELL 10 [CODE] ===
+# Step 9: Calculate reconstruction-error threshold
+train_pred = model.predict(x_train, verbose=0)
+train_error = np.mean((x_train - train_pred) ** 2, axis=1)
+threshold = np.mean(train_error) + np.std(train_error)
+print("Threshold:", threshold)
+
+
+=== CELL 11 [CODE] ===
+# Step 10: Predict normal/anomaly on test data
+test_pred = model.predict(x_test, verbose=0)
+test_error = np.mean((x_test - test_pred) ** 2, axis=1)
+predictions = np.where(test_error > threshold, 0, 1)
+
+
+=== CELL 12 [CODE] ===
+# Step 11: Evaluate accuracy and show one prediction
+print("Accuracy:", accuracy_score(y_test, predictions))
+print("Actual:", "Normal" if y_test[0] == 1 else "Anomaly")
+print("Predicted:", "Normal" if predictions[0] == 1 else "Anomaly")
+
+
+=== CELL 13 [CODE] ===
+# Step 12: Display original and reconstructed ECG
+plt.plot(x_test[0], label="Original")
+plt.plot(test_pred[0], label="Reconstructed")
+plt.title("ECG Signal Reconstruction")
+plt.legend()
+plt.show()
+
+
+=== CELL 14 [CODE] ===
+# Step 13: Plot reconstruction errors and threshold
+plt.plot(test_error, label="Reconstruction Error")
+plt.axhline(threshold, color="red", label="Threshold")
+plt.title("Anomaly Detection")
+plt.legend()
+plt.show()
+
+

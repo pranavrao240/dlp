@@ -1,0 +1,52 @@
+﻿=== CELL 1 [MARKDOWN] ===
+# Practical 1: Study of Deep Learning Packages
+
+Run the cells from top to bottom in Jupyter Notebook. For Spyder, run the same steps in order.
+
+=== CELL 2 [CODE] ===
+# Step 1: TensorFlow addition
+import tensorflow as tf
+
+a = tf.constant(5)
+b = tf.constant(10)
+print("TensorFlow Version:", tf.__version__)
+print("TensorFlow Addition:", (a + b).numpy())
+
+
+=== CELL 3 [CODE] ===
+# Step 2: Keras model demonstration
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Input, Dense
+
+model = Sequential([
+    Input(shape=(2,)),
+    Dense(4, activation="relu"),
+    Dense(1)
+])
+print("Keras Model:")
+model.summary()
+
+
+=== CELL 4 [CODE] ===
+# Step 3: Theano addition (legacy package; optional)
+try:
+    import theano
+    import theano.tensor as T
+    x = T.dscalar("x")
+    y = T.dscalar("y")
+    add = theano.function([x, y], x + y)
+    print("Theano Addition:", add(5, 10))
+except Exception:
+    print("Theano is not supported or installed in this environment.")
+
+
+=== CELL 5 [CODE] ===
+# Step 4: PyTorch addition
+import torch
+
+x = torch.tensor(5)
+y = torch.tensor(10)
+print("PyTorch Version:", torch.__version__)
+print("PyTorch Addition:", (x + y).item())
+
+
